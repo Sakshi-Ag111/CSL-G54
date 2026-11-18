@@ -11,7 +11,7 @@
 - **Roll Number:** 23ESKCS196
 - **Class / Batch:** CS-D-G1 (VII Semester)
 - **Academic Session:** 2026–27
-- **Project Code:** CSL-G09
+- **Project Code:** CSL-G54
 - **Project Title:** Secure FTP-like Server with Encrypted Transfer
 - **Faculty Supervisor:** Mr. Vikash Dhankar, Assistant Professor, Dept. of CSE, SKIT Jaipur
 
