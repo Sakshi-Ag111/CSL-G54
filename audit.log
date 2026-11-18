@@ -1,0 +1,17 @@
+2026-11-16 00:30:56 | INFO | USER=alice        ACTION=LOGIN      FAILED [from 127.0.0.1:61004]
+2026-11-16 00:31:09 | INFO | USER=admin        ACTION=LOGIN      SUCCESS [from 127.0.0.1:61656]
+2026-11-16 00:35:05 | INFO | USER=admin        ACTION=LIST       D:\csminiporject\server_files\admin
+2026-11-16 00:35:54 | INFO | USER=admin        ACTION=MKDIR      myfolder
+2026-11-16 00:39:24 | INFO | USER=admin        ACTION=LIST       D:\csminiporject\server_files\admin
+2026-11-16 00:41:08 | INFO | USER=admin        ACTION=UPLOAD     file=testfile.txt size=205
+2026-11-16 00:41:13 | INFO | USER=admin        ACTION=LIST       D:\csminiporject\server_files\admin
+2026-11-16 00:50:01 | INFO | USER=admin        ACTION=QUIT        [from 127.0.0.1:61656]
+2026-11-16 00:53:37 | INFO | USER=admin        ACTION=LOGIN      SUCCESS [from 127.0.0.1:49597]
+2026-11-16 00:54:24 | INFO | USER=admin        ACTION=DOWNLOAD   file=testfile.txt size=205
+2026-11-16 01:36:11 | INFO | USER=admin        ACTION=QUIT        [from 127.0.0.1:49597]
+2026-11-16 01:46:56 | INFO | USER=admin        ACTION=LOGIN      FAILED [from 127.0.0.1:64869]
+2026-11-16 01:47:08 | INFO | USER=admin        ACTION=LOGIN      SUCCESS [from 127.0.0.1:64948]
+2026-11-16 01:47:23 | INFO | USER=admin        ACTION=UPLOAD     file=testfile.txt size=205
+2026-11-16 01:47:25 | INFO | USER=admin        ACTION=LIST       D:\csminiporject\server_files\admin
+2026-11-16 01:47:39 | INFO | USER=admin        ACTION=DOWNLOAD   file=testfile.txt size=205
+2026-11-16 01:47:44 | INFO | USER=admin        ACTION=QUIT        [from 127.0.0.1:64948]

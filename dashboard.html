@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Courier New', Courier, monospace; }
+    .log-row:nth-child(even) { background: color-mix(in srgb, var(--card) 60%, transparent); }
+    .log-row:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+    .tab-active { border-bottom: 2px solid var(--primary); color: var(--foreground); }
+    .tab-inactive { border-bottom: 2px solid transparent; color: var(--muted-foreground); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .live-dot { animation: blink 2s ease-in-out infinite; }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] p-0 m-0 antialiased">
+
+  <!-- Top bar -->
+  <div class="border-b border-[var(--border)] px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-[var(--primary)]">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <span class="text-sm font-semibold tracking-tight">Secure FTP Dashboard</span>
+      <span class="text-xs text-[var(--muted-foreground)] font-normal">/ LAN File Transfer Monitor</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="live-dot w-1.5 h-1.5 rounded-full bg-[var(--success)] inline-block"></span>
+      <span class="text-xs text-[var(--muted-foreground)]">Server Online · Port 9000</span>
+    </div>
+  </div>
+
+  <!-- Stat row -->
+  <div class="grid grid-cols-4 divide-x divide-[var(--border)] border-b border-[var(--border)]">
+    <div class="px-6 py-4">
+      <div class="text-xs text-[var(--muted-foreground)] mb-1">Encryption</div>
+      <div class="text-sm font-semibold text-[var(--foreground)]">TLS 1.3</div>
+      <div class="text-xs text-[var(--muted-foreground)] mt-0.5">AES-256-GCM</div>
+    </div>
+    <div class="px-6 py-4">
+      <div class="text-xs text-[var(--muted-foreground)] mb-1">Auth Hashing</div>
+      <div class="text-sm font-semibold text-[var(--foreground)]">SHA-256</div>
+      <div class="text-xs text-[var(--muted-foreground)] mt-0.5">256-bit digest</div>
+    </div>
+    <div class="px-6 py-4">
+      <div class="text-xs text-[var(--muted-foreground)] mb-1">Active Users</div>
+      <div class="text-sm font-semibold text-[var(--foreground)]">2 accounts</div>
+      <div class="text-xs text-[var(--muted-foreground)] mt-0.5">admin · alice</div>
+    </div>
+    <div class="px-6 py-4">
+      <div class="text-xs text-[var(--muted-foreground)] mb-1">Audit Events</div>
+      <div class="text-sm font-semibold text-[var(--foreground)]" id="event-count">10 entries</div>
+      <div class="text-xs text-[var(--muted-foreground)] mt-0.5">all operations logged</div>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="flex gap-0 border-b border-[var(--border)] px-6">
+    <button onclick="switchTab('logs')" id="tab-logs" class="tab-active px-4 py-2.5 text-xs font-medium transition-colors">Audit Log</button>
+    <button onclick="switchTab('files')" id="tab-files" class="tab-inactive px-4 py-2.5 text-xs font-medium transition-colors">Files</button>
+    <button onclick="switchTab('users')" id="tab-users" class="tab-inactive px-4 py-2.5 text-xs font-medium transition-colors">Users</button>
+    <button onclick="switchTab('enc')" id="tab-enc" class="tab-inactive px-4 py-2.5 text-xs font-medium transition-colors">Encryption</button>
+    <button onclick="switchTab('howto')" id="tab-howto" class="tab-inactive px-4 py-2.5 text-xs font-medium transition-colors">How to Run</button>
+  </div>
+
+  <!-- AUDIT LOG tab -->
+  <div id="pane-logs" class="p-6">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs text-[var(--muted-foreground)]">audit.log — real-time record of all operations</span>
+      <div class="flex gap-2">
+        <button onclick="filterLog('ALL')" id="f-all" class="px-2 py-1 text-xs rounded border border-[var(--primary)] text-[var(--primary)] bg-transparent">All</button>
+        <button onclick="filterLog('LOGIN')" id="f-login" class="px-2 py-1 text-xs rounded border border-[var(--border)] text-[var(--muted-foreground)]">Login</button>
+        <button onclick="filterLog('UPLOAD')" id="f-upload" class="px-2 py-1 text-xs rounded border border-[var(--border)] text-[var(--muted-foreground)]">Upload</button>
+        <button onclick="filterLog('DOWNLOAD')" id="f-download" class="px-2 py-1 text-xs rounded border border-[var(--border)] text-[var(--muted-foreground)]">Download</button>
+      </div>
+    </div>
+    <div class="border border-[var(--border)] rounded overflow-hidden">
+      <div class="bg-[var(--card)] border-b border-[var(--border)] px-4 py-2 grid grid-cols-12 gap-2 text-xs text-[var(--muted-foreground)]">
+        <span class="col-span-3">Timestamp</span>
+        <span class="col-span-2">User</span>
+        <span class="col-span-2">Action</span>
+        <span class="col-span-5">Detail</span>
+      </div>
+      <div id="log-body" class="text-xs font-mono divide-y divide-[var(--border)]"></div>
+    </div>
+  </div>
+
+  <!-- FILES tab -->
+  <div id="pane-files" class="p-6 hidden">
+    <div class="text-xs text-[var(--muted-foreground)] mb-3">server_files/ — per-user isolated storage</div>
+    <div class="border border-[var(--border)] rounded overflow-hidden">
+      <div class="bg-[var(--card)] border-b border-[var(--border)] px-4 py-2 grid grid-cols-12 gap-2 text-xs text-[var(--muted-foreground)]">
+        <span class="col-span-5">Path</span>
+        <span class="col-span-2">Owner</span>
+        <span class="col-span-2">Type</span>
+        <span class="col-span-3">Size</span>
+      </div>
+      <div id="file-body" class="text-xs font-mono divide-y divide-[var(--border)]"></div>
+    </div>
+  </div>
+
+  <!-- USERS tab -->
+  <div id="pane-users" class="p-6 hidden">
+    <div class="text-xs text-[var(--muted-foreground)] mb-3">users.json — credentials with SHA-256 hashed passwords</div>
+    <div class="border border-[var(--border)] rounded overflow-hidden">
+      <div class="bg-[var(--card)] border-b border-[var(--border)] px-4 py-2 grid grid-cols-12 gap-2 text-xs text-[var(--muted-foreground)]">
+        <span class="col-span-2">Username</span>
+        <span class="col-span-8">SHA-256 Hash (stored password)</span>
+        <span class="col-span-2">Status</span>
+      </div>
+      <div id="user-body" class="text-xs font-mono divide-y divide-[var(--border)]"></div>
+    </div>
+    <div class="mt-4 p-4 border border-[var(--border)] rounded bg-[var(--card)]">
+      <div class="text-xs text-[var(--muted-foreground)] mb-2">SHA-256 verification — how hashing works</div>
+      <div class="flex gap-2 items-center">
+        <input id="pw-input" type="text" placeholder="type a password to hash..." class="flex-1 px-3 py-1.5 text-xs font-mono bg-[var(--background)] border border-[var(--border)] rounded text-[var(--foreground)] outline-none focus:border-[var(--primary)]">
+        <button onclick="hashLive()" class="px-3 py-1.5 text-xs border border-[var(--primary)] text-[var(--primary)] rounded hover:bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]">Hash</button>
+      </div>
+      <div id="hash-out" class="mt-2 text-xs text-[var(--muted-foreground)] font-mono break-all"></div>
+    </div>
+  </div>
+
+  <!-- ENCRYPTION tab -->
+  <div id="pane-enc" class="p-6 hidden space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+      <div class="border border-[var(--border)] rounded p-4 bg-[var(--card)]">
+        <div class="text-xs text-[var(--muted-foreground)] mb-3 pb-2 border-b border-[var(--border)]">Channel Encryption</div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-[var(--muted-foreground)]">Protocol</span><span class="font-semibold">TLS 1.3</span></div>
+          <div class="flex justify-between"><span class="text-[var(--muted-foreground)]">Cipher Suite</span><span class="font-semibold">AES-256-GCM</span></div>
+          <div class="flex justify-between"><span class="text-[var(--muted-foreground)]">Key Exchange</span><span class="font-semibold">ECDHE</span></div>
+          <div class="flex justify-between"><span class="text-[var(--muted-foreground)]">Certificate</span><span class="font-semibold">RSA-2048</span></div>
+          <div class="flex justify-between"><span class="text-[var(--muted-foreground)]">Same as</span><span class="font-semibold text-[var(--success)]">HTTPS</span></div>
+        </div>
+      </div>
+      <div class="border border-[var(--border)] rounded p-4 bg-[var(--card)]">
+        <div class="text-xs text-[var(--muted-foreground)] mb-3 pb-2 border-b border-[var(--border)]">Password Hashing</div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-[var(--muted-foreground)]">Algorithm</span><span class="font-semibold">SHA-256</span></div>
+          <div class="flex justify-between"><span class="text-[var(--muted-foreground)]">Output size</span><span class="font-semibold">256 bits / 64 hex chars</span></div>
+          <div class="flex justify-between"><span class="text-[var(--muted-foreground)]">Reversible?</span><span class="font-semibold text-[var(--error)]">No — one-way only</span></div>
+          <div class="flex justify-between"><span class="text-[var(--muted-foreground)]">Plain text stored?</span><span class="font-semibold text-[var(--success)]">Never</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="border border-[var(--border)] rounded p-4 bg-[var(--card)]">
+      <div class="text-xs text-[var(--muted-foreground)] mb-3 pb-2 border-b border-[var(--border)]">TLS Handshake flow</div>
+      <div class="flex items-center gap-2 text-xs font-mono overflow-x-auto pb-1">
+        <div class="text-center"><div class="border border-[var(--border)] rounded px-3 py-2 bg-[var(--background)]">Client</div></div>
+        <div class="flex-1 space-y-1.5 min-w-0">
+          <div class="flex items-center gap-2"><div class="flex-1 border-t border-dashed border-[var(--muted-foreground)]"></div><span class="text-[var(--muted-foreground)] text-xs whitespace-nowrap">ClientHello (TLS 1.3)</span><div class="w-0 h-0 border-t-4 border-b-4 border-l-8 border-transparent border-l-[var(--muted-foreground)]"></div></div>
+          <div class="flex items-center gap-2"><div class="w-0 h-0 border-t-4 border-b-4 border-r-8 border-transparent border-r-[var(--primary)]"></div><span class="text-[var(--primary)] text-xs whitespace-nowrap">ServerHello + Cert (RSA-2048)</span><div class="flex-1 border-t border-dashed border-[var(--primary)]"></div></div>
+          <div class="flex items-center gap-2"><div class="flex-1 border-t border-dashed border-[var(--muted-foreground)]"></div><span class="text-[var(--muted-foreground)] text-xs whitespace-nowrap">Finished (ECDHE key)</span><div class="w-0 h-0 border-t-4 border-b-4 border-l-8 border-transparent border-l-[var(--muted-foreground)]"></div></div>
+          <div class="flex items-center gap-2 justify-center"><span class="text-[var(--success)] text-xs">↕ All data encrypted with AES-256-GCM</span></div>
+        </div>
+        <div class="text-center"><div class="border border-[var(--border)] rounded px-3 py-2 bg-[var(--background)]">Server</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW TO RUN tab -->
+  <div id="pane-howto" class="p-6 hidden space-y-4">
+    <div class="grid grid-cols-3 gap-4">
+      <div class="border border-[var(--border)] rounded p-4 bg-[var(--card)]">
+        <div class="text-xs text-[var(--muted-foreground)] mb-2">Step 1 — Setup (once)</div>
+        <div class="font-mono text-xs bg-[var(--background)] border border-[var(--border)] rounded p-3 text-[var(--foreground)]">python setup.py</div>
+        <div class="text-xs text-[var(--muted-foreground)] mt-2">Generates TLS cert + creates users</div>
+      </div>
+      <div class="border border-[var(--border)] rounded p-4 bg-[var(--card)]">
+        <div class="text-xs text-[var(--muted-foreground)] mb-2">Step 2 — Start server</div>
+        <div class="font-mono text-xs bg-[var(--background)] border border-[var(--border)] rounded p-3 text-[var(--foreground)]">python server.py</div>
+        <div class="text-xs text-[var(--muted-foreground)] mt-2">Listens on port 9000 with TLS</div>
+      </div>
+      <div class="border border-[var(--border)] rounded p-4 bg-[var(--card)]">
+        <div class="text-xs text-[var(--muted-foreground)] mb-2">Step 3 — Connect client</div>
+        <div class="font-mono text-xs bg-[var(--background)] border border-[var(--border)] rounded p-3 text-[var(--foreground)]">python client.py<br>python client.py 192.168.x.x</div>
+        <div class="text-xs text-[var(--muted-foreground)] mt-2">Same machine or LAN IP</div>
+      </div>
+    </div>
+    <div class="border border-[var(--border)] rounded p-4 bg-[var(--card)]">
+      <div class="text-xs text-[var(--muted-foreground)] mb-3 pb-2 border-b border-[var(--border)]">Available commands at sftp&gt; prompt</div>
+      <div class="grid grid-cols-2 gap-x-8 gap-y-1.5 text-xs font-mono">
+        <div class="flex gap-4"><span class="text-[var(--primary)] w-28">LIST</span><span class="text-[var(--muted-foreground)]">List files on server</span></div>
+        <div class="flex gap-4"><span class="text-[var(--primary)] w-28">UPLOAD &lt;file&gt;</span><span class="text-[var(--muted-foreground)]">Send file to server</span></div>
+        <div class="flex gap-4"><span class="text-[var(--primary)] w-28">DOWNLOAD &lt;file&gt;</span><span class="text-[var(--muted-foreground)]">Get file from server</span></div>
+        <div class="flex gap-4"><span class="text-[var(--primary)] w-28">MKDIR &lt;dir&gt;</span><span class="text-[var(--muted-foreground)]">Create directory</span></div>
+        <div class="flex gap-4"><span class="text-[var(--primary)] w-28">DELETE &lt;name&gt;</span><span class="text-[var(--muted-foreground)]">Remove file or dir</span></div>
+        <div class="flex gap-4"><span class="text-[var(--primary)] w-28">PWD</span><span class="text-[var(--muted-foreground)]">Print current directory</span></div>
+        <div class="flex gap-4"><span class="text-[var(--primary)] w-28">CWD &lt;dir&gt;</span><span class="text-[var(--muted-foreground)]">Change directory</span></div>
+        <div class="flex gap-4"><span class="text-[var(--primary)] w-28">QUIT</span><span class="text-[var(--muted-foreground)]">Disconnect</span></div>
+      </div>
+    </div>
+    <div class="border border-[var(--border)] rounded p-4 bg-[var(--card)]">
+      <div class="text-xs text-[var(--muted-foreground)] mb-2">Add a new user</div>
+      <div class="font-mono text-xs bg-[var(--background)] border border-[var(--border)] rounded p-3">python setup.py adduser bob bobpassword</div>
+    </div>
+  </div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const LOGS = [
+  { ts: "2026-11-16 00:10:01", user: "admin", action: "LOGIN",    detail: "SUCCESS [from 127.0.0.1:52100]" },
+  { ts: "2026-11-16 00:10:03", user: "admin", action: "LIST",     detail: "server_files\\admin" },
+  { ts: "2026-11-16 00:41:08", user: "admin", action: "UPLOAD",   detail: "file=testfile.txt size=205" },
+  { ts: "2026-11-16 00:41:13", user: "admin", action: "LIST",     detail: "server_files\\admin" },
+  { ts: "2026-11-16 00:41:20", user: "admin", action: "MKDIR",    detail: "myfolder" },
+  { ts: "2026-11-16 00:41:30", user: "admin", action: "PWD",      detail: "/admin" },
+  { ts: "2026-11-16 00:50:01", user: "admin", action: "QUIT",     detail: "[from 127.0.0.1:61656]" },
+  { ts: "2026-11-16 00:53:37", user: "admin", action: "LOGIN",    detail: "SUCCESS [from 127.0.0.1:49597]" },
+  { ts: "2026-11-16 00:54:24", user: "admin", action: "DOWNLOAD", detail: "file=testfile.txt size=205" },
+  { ts: "2026-11-16 00:54:30", user: "admin", action: "QUIT",     detail: "[from 127.0.0.1:49597]" },
+];
+
+const FILES = [
+  { path: "admin/", owner: "admin", type: "DIR",  size: "-" },
+  { path: "admin/myfolder/", owner: "admin", type: "DIR",  size: "-" },
+  { path: "admin/testfile.txt", owner: "admin", type: "FILE", size: "205 B" },
+];
+
+const USERS = [
+  { name: "admin", hash: "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9" },
+  { name: "alice", hash: "4e40e8ffe0ee32fa53e139147ed559229a5930f89c2204706fc174beb36210b3" },
+];
+
+const ACTION_COLORS = {
+  LOGIN:    "text-[var(--success)]",
+  LOGOUT:   "text-[var(--muted-foreground)]",
+  QUIT:     "text-[var(--muted-foreground)]",
+  UPLOAD:   "text-[var(--primary)]",
+  DOWNLOAD: "text-[var(--accent)]",
+  LIST:     "text-[var(--foreground)]",
+  MKDIR:    "text-[var(--warning)]",
+  DELETE:   "text-[var(--error)]",
+  PWD:      "text-[var(--foreground)]",
+};
+
+// ── Render logs ───────────────────────────────────────────────────────────────
+let currentFilter = 'ALL';
+function renderLogs(filter) {
+  const body = document.getElementById('log-body');
+  const rows = filter === 'ALL' ? LOGS : LOGS.filter(l => l.action === filter);
+  if (rows.length === 0) {
+    body.innerHTML = '<div class="px-4 py-6 text-center text-xs text-[var(--muted-foreground)]">No entries for this filter.</div>';
+    return;
+  }
+  body.innerHTML = rows.map(l => `
+    <div class="log-row px-4 py-2 grid grid-cols-12 gap-2 items-center">
+      <span class="col-span-3 text-[var(--muted-foreground)]">${l.ts}</span>
+      <span class="col-span-2 text-[var(--foreground)]">${l.user}</span>
+      <span class="col-span-2 ${ACTION_COLORS[l.action] || ''} font-semibold">${l.action}</span>
+      <span class="col-span-5 text-[var(--muted-foreground)] truncate">${l.detail}</span>
+    </div>`).join('');
+  document.getElementById('event-count').textContent = LOGS.length + ' entries';
+}
+
+function filterLog(f) {
+  currentFilter = f;
+  ['ALL','LOGIN','UPLOAD','DOWNLOAD'].forEach(k => {
+    const btn = document.getElementById('f-' + k.toLowerCase());
+    if (!btn) return;
+    if (k === f) {
+      btn.className = 'px-2 py-1 text-xs rounded border border-[var(--primary)] text-[var(--primary)] bg-transparent';
+    } else {
+      btn.className = 'px-2 py-1 text-xs rounded border border-[var(--border)] text-[var(--muted-foreground)]';
+    }
+  });
+  renderLogs(f);
+}
+
+// ── Render files ──────────────────────────────────────────────────────────────
+function renderFiles() {
+  document.getElementById('file-body').innerHTML = FILES.map(f => `
+    <div class="log-row px-4 py-2 grid grid-cols-12 gap-2 items-center">
+      <span class="col-span-5 text-[var(--foreground)]">${f.path}</span>
+      <span class="col-span-2 text-[var(--muted-foreground)]">${f.owner}</span>
+      <span class="col-span-2 ${f.type === 'DIR' ? 'text-[var(--warning)]' : 'text-[var(--primary)]'}">${f.type}</span>
+      <span class="col-span-3 text-[var(--muted-foreground)]">${f.size}</span>
+    </div>`).join('');
+}
+
+// ── Render users ──────────────────────────────────────────────────────────────
+function renderUsers() {
+  document.getElementById('user-body').innerHTML = USERS.map(u => `
+    <div class="log-row px-4 py-2.5 grid grid-cols-12 gap-2 items-center">
+      <span class="col-span-2 text-[var(--foreground)] font-semibold">${u.name}</span>
+      <span class="col-span-8 text-[var(--muted-foreground)] text-xs break-all">${u.hash}</span>
+      <span class="col-span-2"><span class="inline-flex items-center gap-1 text-xs text-[var(--success)]"><span class="w-1.5 h-1.5 rounded-full bg-[var(--success)] inline-block"></span>active</span></span>
+    </div>`).join('');
+}
+
+// ── Live hash ─────────────────────────────────────────────────────────────────
+async function hashLive() {
+  const pw = document.getElementById('pw-input').value;
+  if (!pw) return;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  const isMatch = USERS.find(u => u.hash === hex);
+  document.getElementById('hash-out').innerHTML =
+    `sha256("${pw}") = <span class="text-[var(--foreground)]">${hex}</span>` +
+    (isMatch ? `<br><span class="text-[var(--success)]">✓ matches stored hash for '${isMatch.name}'</span>` : '');
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') hashLive(); });
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+const TABS = ['logs','files','users','enc','howto'];
+function switchTab(t) {
+  TABS.forEach(id => {
+    document.getElementById('pane-' + id).classList.toggle('hidden', id !== t);
+    const btn = document.getElementById('tab-' + id);
+    btn.className = (id === t ? 'tab-active' : 'tab-inactive') + ' px-4 py-2.5 text-xs font-medium transition-colors';
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderLogs('ALL');
+renderFiles();
+renderUsers();
+</script>
+
+</body>
+</html>

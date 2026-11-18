@@ -1,0 +1,11 @@
+Hello from Secure-FTP!
+This is a test file for the mini project.
+Student: admin
+Date: 2026-11-16
+
+Features tested:
+- TLS Encrypted Transfer
+- Login Authentication
+- File Upload / Download
+- Audit Logging
+

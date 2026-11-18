@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+extracted_template/
+body_part.py
+generate_report.py
+generate_report_updated.py
+test_front_exact.docx
